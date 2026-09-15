@@ -116,7 +116,6 @@
 						<dependency>
 							<groupId>com.puppycrawl.tools</groupId>
 							<artifactId>checkstyle</artifactId>
-							<version>10.3</version>
 						</dependency>
 					</dependencies>
 				</plugin>
@@ -235,10 +234,6 @@
 			<id>coverage</id>
 			<build>
 				<plugins>
-					<plugin>
-						<groupId>org.jacoco</groupId>
-						<artifactId>jacoco-maven-plugin</artifactId>
-					</plugin>
 				</plugins>
 			</build>
 		</profile>
