@@ -34,8 +34,11 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserDto create(UserDto userDto) {
         validateEmail(userDto.getEmail());
-        checkEmailUnique(userDto.getEmail(), null);
+        if (userRepository.findByEmail(userDto.getEmail()).isPresent()) {
+            throw new ConflictException("Email already in use: " + userDto.getEmail());
+        }
         User user = UserMapper.toUser(userDto);
+        user.setId(null);
         User saved = userRepository.save(user);
         return UserMapper.toUserDto(saved);
     }
@@ -47,13 +50,17 @@ public class UserServiceImpl implements UserService {
 
         if (userDto.getEmail() != null) {
             validateEmail(userDto.getEmail());
-            checkEmailUnique(userDto.getEmail(), userId);
+            userRepository.findByEmail(userDto.getEmail())
+                    .filter(u -> !u.getId().equals(userId))
+                    .ifPresent(u -> {
+                        throw new ConflictException("Email already in use: " + userDto.getEmail());
+                    });
             existing.setEmail(userDto.getEmail());
         }
         if (userDto.getName() != null) {
             existing.setName(userDto.getName());
         }
-        User updated = userRepository.update(existing);
+        User updated = userRepository.save(existing);
         return UserMapper.toUserDto(updated);
     }
 
@@ -61,21 +68,12 @@ public class UserServiceImpl implements UserService {
     public void delete(Long id) {
         userRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("User with id " + id + " not found"));
-        userRepository.delete(id);
+        userRepository.deleteById(id);
     }
 
     private void validateEmail(String email) {
         if (email == null || email.isBlank() || !email.contains("@")) {
             throw new ValidationException("Email must contain @ and not be blank");
-        }
-    }
-
-    private void checkEmailUnique(String email, Long excludeUserId) {
-        boolean exists = userRepository.findAll().stream()
-                .anyMatch(u -> u.getEmail().equalsIgnoreCase(email)
-                        && (excludeUserId == null || !u.getId().equals(excludeUserId)));
-        if (exists) {
-            throw new ConflictException("Email already in use: " + email);
         }
     }
 }
